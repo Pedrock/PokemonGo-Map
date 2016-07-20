@@ -9,6 +9,8 @@ import struct
 import logging
 import requests
 import time
+from Queue import Queue
+import threading
 
 from pgoapi import PGoApi
 from pgoapi.utilities import f2i, h2f, get_cellid, encode, get_pos_by_name
@@ -59,8 +61,39 @@ def login(args, position):
 
     log.info('Login successful.')
 
+class ThreadScan(threading.Thread):
+    def __init__(self, queue, num_steps):
+        threading.Thread.__init__(self)
+        self.queue = queue
+        self.num_steps = num_steps
 
-def search(args):
+    def run(self):
+        while True:
+            task = self.queue.get()
+            step_location = task['step_location']
+            i = task['i']
+            num_steps = self.num_steps
+            
+            log.info('Scanning step {:d} of {:d}.'.format(i, num_steps**2))
+            log.debug('Scan location is {:f}, {:f}'.format(step_location[0], step_location[1]))
+
+            response_dict = send_map_request(api, step_location)
+            while not response_dict:
+                log.info('Map Download failed. Trying again.')
+                response_dict = send_map_request(api, step_location)
+                if response_dict:
+                    try:
+                        parse_map(response_dict)
+                    except:
+                        log.error('Scan step failed ({:d}). Trying again.'.format(i))
+                        response_dict = False
+
+            #signals to queue job is done
+            log.info('Completed {:5.2f}% of scan.'.format(float(i) / num_steps**2*100))
+            self.queue.task_done()
+
+
+def search(args,queue):
     num_steps = args.step_limit
     position = (config['ORIGINAL_LATITUDE'], config['ORIGINAL_LONGITUDE'], 0)
 
@@ -73,30 +106,22 @@ def search(args):
             login(args, position)
     else:
         login(args, position)
+    
+    for i in range(10):
+        t = ThreadScan(queue, num_steps)
+        t.setDaemon(True)
+        t.start()
 
     i = 1
     for step_location in generate_location_steps(position, num_steps):
-        log.info('Scanning step {:d} of {:d}.'.format(i, num_steps**2))
-        log.debug('Scan location is {:f}, {:f}'.format(step_location[0], step_location[1]))
-
-        response_dict = send_map_request(api, step_location)
-        while not response_dict:
-            log.info('Map Download failed. Trying again.')
-            response_dict = send_map_request(api, step_location)
-            time.sleep(REQ_SLEEP)
-
-        try:
-            parse_map(response_dict)
-        except KeyError:
-            log.error('Scan step failed. Response dictionary key error.')
-
-        log.info('Completed {:5.2f}% of scan.'.format(float(i) / num_steps**2*100))
+        task = {'i':i, 'step_location':step_location}
+        queue.put(task)
         i += 1
-        # time.sleep(REQ_SLEEP)
-
 
 def search_loop(args):
     while True:
-        search(args)
+        queue = Queue()
+        search(args,queue)
+        queue.join()
         log.info("Scanning complete.")
         time.sleep(1)
