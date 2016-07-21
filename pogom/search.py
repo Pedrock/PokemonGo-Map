@@ -65,6 +65,7 @@ class ThreadScan(threading.Thread):
     def run(self):
         while True:
             task = self.queue.get()
+
             step_location = task['step_location']
             i = task['i']
             num_steps = self.num_steps
@@ -73,7 +74,11 @@ class ThreadScan(threading.Thread):
             log.debug('Scan location is {:f}, {:f}'.format(step_location[0], step_location[1]))
 
             while True:
-                response_dict = send_map_request(api, step_location)
+                try:
+                    response_dict = send_map_request(api, step_location)
+                except:
+                    traceback.print_exc()
+                    response_dict = False
                 if response_dict:
                     try:
                         parse_map(response_dict)

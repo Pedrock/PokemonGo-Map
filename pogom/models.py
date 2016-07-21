@@ -4,8 +4,8 @@
 import logging
 import traceback
 import time
-from peewee import Model, SqliteDatabase, InsertQuery, IntegerField,\
-                   CharField, FloatField, BooleanField, DateTimeField, OperationalError
+from peewee import Model, PostgresqlDatabase, InsertQuery, IntegerField,\
+                   CharField, FloatField, BooleanField, DateTimeField, OperationalError, IntegrityError
 from datetime import datetime
 from base64 import b64encode
 
@@ -13,7 +13,7 @@ from .utils import get_pokemon_name
 from .transform import transform_from_wgs_to_gcj
 
 
-db = SqliteDatabase('pogom.db')
+db = PostgresqlDatabase('pokemap', user='postgres', password='password')
 log = logging.getLogger(__name__)
 
 
@@ -163,11 +163,14 @@ def bulk_upsert(cls, data):
         log.debug("Inserting items {} to {}".format(i, min(i+step, num_rows)))
         while(1):
             try:
-                InsertQuery(cls, rows=data.values()[i:min(i+step, num_rows)]).upsert().execute()
+                with db.atomic():
+                    InsertQuery(cls, rows=data.values()[i:min(i+step, num_rows)]).upsert(False).execute()
                 break
             except OperationalError:
                 log.info("database locked")
                 time.sleep(0.01)
+            except IntegrityError:
+                break
         i+=step
 
 

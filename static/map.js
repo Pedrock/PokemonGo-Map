@@ -289,10 +289,10 @@ function updateMap() {
             if (!document.getElementById('pokemon-switch').checked) {
                 return false;
             } else { // add marker to map and item to dict
-                if (item.encounter_id in map_pokemons)
-                    map_pokemons[item.encounter_id].marker.setMap(null);
-                item.marker = setupPokemonMarker(item);
-                map_pokemons[item.encounter_id] = item;
+                if (!(item.encounter_id in map_pokemons)) {
+                    item.marker = setupPokemonMarker(item);
+                    map_pokemons[item.encounter_id] = item;
+                }
             }
 
         });
@@ -301,10 +301,10 @@ function updateMap() {
             if (!document.getElementById('pokestops-switch').checked) {
                 return false;
             } else { // add marker to map and item to dict
-                if (item.pokestop_id in map_pokestops)
-                    map_pokestops[item.pokestop_id].marker.setMap(null);
-                item.marker = setupPokestopMarker(item);
-                map_pokestops[item.pokestop_id] = item;
+                if (!(item.pokestop_id in map_pokestops)) {
+                    item.marker = setupPokestopMarker(item);
+                    map_pokestops[item.pokestop_id] = item;
+                }
             }
 
         });
