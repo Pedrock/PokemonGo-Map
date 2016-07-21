@@ -4,7 +4,7 @@
 import logging
 import traceback
 import time
-from peewee import Model, PostgresqlDatabase, InsertQuery, IntegerField,\
+from lib.peewee import Model, PostgresqlDatabase, InsertQuery, IntegerField,\
                    CharField, FloatField, BooleanField, DateTimeField, OperationalError, IntegrityError
 from datetime import datetime
 from base64 import b64encode
@@ -162,15 +162,9 @@ def bulk_upsert(cls, data):
     while i < num_rows:
         log.debug("Inserting items {} to {}".format(i, min(i+step, num_rows)))
         while(1):
-            try:
-                with db.atomic():
-                    InsertQuery(cls, rows=data.values()[i:min(i+step, num_rows)]).upsert(False).execute()
-                break
-            except OperationalError:
-                log.info("database locked")
-                time.sleep(0.01)
-            except IntegrityError:
-                break
+            with db.atomic():
+                InsertQuery(cls, rows=data.values()[i:min(i+step, num_rows)]).upsert().execute()
+            break
         i+=step
 
 

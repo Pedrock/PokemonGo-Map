@@ -116,7 +116,7 @@ def search(args,queue):
 
 def search_loop(args):
     queue = Queue()
-    for i in range(50):
+    for i in range(25):
         t = ThreadScan(queue, args.step_limit)
         t.setDaemon(True)
         t.start()
@@ -124,4 +124,4 @@ def search_loop(args):
         search(args,queue)
         queue.join()
         log.info("Scanning complete.")
-        time.sleep(1)
+        time.sleep(30)
