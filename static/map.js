@@ -289,6 +289,8 @@ function updateMap() {
             if (!document.getElementById('pokemon-switch').checked) {
                 return false;
             } else { // add marker to map and item to dict
+                if (item.encounter_id in map_pokemons)
+                    map_pokemons[item.encounter_id].marker.setMap(null);
                 item.marker = setupPokemonMarker(item);
                 map_pokemons[item.encounter_id] = item;
             }
@@ -299,8 +301,8 @@ function updateMap() {
             if (!document.getElementById('pokestops-switch').checked) {
                 return false;
             } else { // add marker to map and item to dict
-                if (item.marker)
-                    item.marker.setMap(null);
+                if (item.pokestop_id in map_pokestops)
+                    map_pokestops[item.pokestop_id].marker.setMap(null);
                 item.marker = setupPokestopMarker(item);
                 map_pokestops[item.pokestop_id] = item;
             }
@@ -339,7 +341,7 @@ function updateMap() {
 window.setInterval(updateMap, 5000);
 updateMap();
 
-document.getElementById('gyms-switch').onclick = function() {
+$('#gyms-switch').change(function() {
     if (this.checked) {
         updateMap();
     } else {
@@ -348,7 +350,7 @@ document.getElementById('gyms-switch').onclick = function() {
         });
         map_gyms = {}
     }
-};
+});
 
 $('#pokemon-switch').change(function() {
     if (this.checked) {

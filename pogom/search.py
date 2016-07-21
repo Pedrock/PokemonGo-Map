@@ -102,11 +102,6 @@ def search(args,queue):
             login(args, position)
     else:
         login(args, position)
-    
-    for i in range(50):
-        t = ThreadScan(queue, num_steps)
-        t.setDaemon(True)
-        t.start()
 
     i = 1
     for step_location in generate_location_steps(position, num_steps):
@@ -115,8 +110,12 @@ def search(args,queue):
         i += 1
 
 def search_loop(args):
+    queue = Queue()
+    for i in range(50):
+        t = ThreadScan(queue, args.step_limit)
+        t.setDaemon(True)
+        t.start()
     while True:
-        queue = Queue()
         search(args,queue)
         queue.join()
         log.info("Scanning complete.")
