@@ -71,16 +71,16 @@ class ThreadScan(threading.Thread):
             log.info('Scanning step {:d} of {:d}.'.format(i, num_steps**2))
             log.debug('Scan location is {:f}, {:f}'.format(step_location[0], step_location[1]))
 
-            response_dict = send_map_request(api, step_location)
-            while not response_dict:
-                log.info('Map Download failed. Trying again.')
+            while True:
                 response_dict = send_map_request(api, step_location)
                 if response_dict:
                     try:
                         parse_map(response_dict)
+                        break
                     except:
                         log.error('Scan step failed ({:d}). Trying again.'.format(i))
-                        response_dict = False
+                else:
+                    log.info('Map Download failed ({:d}). Trying again.'.format(i))
 
             #signals to queue job is done
             log.info('Completed {:5.2f}% of scan.'.format(float(i) / num_steps**2*100))
