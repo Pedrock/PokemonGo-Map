@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import traceback
 import time
 from Queue import Queue
 import threading
@@ -78,6 +79,7 @@ class ThreadScan(threading.Thread):
                         parse_map(response_dict)
                         break
                     except:
+                        traceback.print_exc()
                         log.error('Scan step failed ({:d}). Trying again.'.format(i))
                 else:
                     log.info('Map Download failed ({:d}). Trying again.'.format(i))
@@ -101,7 +103,7 @@ def search(args,queue):
     else:
         login(args, position)
     
-    for i in range(10):
+    for i in range(50):
         t = ThreadScan(queue, num_steps)
         t.setDaemon(True)
         t.start()

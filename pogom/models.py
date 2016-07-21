@@ -2,8 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import traceback
+import time
 from peewee import Model, SqliteDatabase, InsertQuery, IntegerField,\
-                   CharField, FloatField, BooleanField, DateTimeField
+                   CharField, FloatField, BooleanField, DateTimeField, OperationalError
 from datetime import datetime
 from base64 import b64encode
 
@@ -115,17 +117,30 @@ def parse_map(map_dict):
                 }
 
             else:  # Currently, there are only stops and gyms
-                gyms[f['id']] = {
-                    'gym_id': f['id'],
-                    'team_id': f['owned_by_team'],
-                    'guard_pokemon_id': f['guard_pokemon_id'],
-                    'gym_points': f['gym_points'],
-                    'enabled': f['enabled'],
-                    'latitude': f['latitude'],
-                    'longitude': f['longitude'],
-                    'last_modified': datetime.utcfromtimestamp(
-                        f['last_modified_timestamp_ms'] / 1000.0),
-                }
+                if 'owned_by_team' in f:
+                    gyms[f['id']] = {
+                        'gym_id': f['id'],
+                        'team_id': f['owned_by_team'],
+                        'guard_pokemon_id': f['guard_pokemon_id'],
+                        'gym_points': f['gym_points'],
+                        'enabled': f['enabled'],
+                        'latitude': f['latitude'],
+                        'longitude': f['longitude'],
+                        'last_modified': datetime.utcfromtimestamp(
+                            f['last_modified_timestamp_ms'] / 1000.0),
+                    }
+                else:
+                    gyms[f['id']] = {
+                            'gym_id': f['id'],
+                            'team_id': 0,
+                            'guard_pokemon_id': 0,
+                            'gym_points': 0,
+                            'enabled': f['enabled'],
+                            'latitude': f['latitude'],
+                            'longitude': f['longitude'],
+                            'last_modified': datetime.utcfromtimestamp(
+                                f['last_modified_timestamp_ms'] / 1000.0),
+                        }
 
     if pokemons:
         log.info("Upserting {} pokemon".format(len(pokemons)))
@@ -146,7 +161,13 @@ def bulk_upsert(cls, data):
 
     while i < num_rows:
         log.debug("Inserting items {} to {}".format(i, min(i+step, num_rows)))
-        InsertQuery(cls, rows=data.values()[i:min(i+step, num_rows)]).upsert().execute()
+        while(1):
+            try:
+                InsertQuery(cls, rows=data.values()[i:min(i+step, num_rows)]).upsert().execute()
+                break
+            except OperationalError:
+                log.info("database locked")
+                time.sleep(0.01)
         i+=step
 
 
