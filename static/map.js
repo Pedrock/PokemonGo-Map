@@ -200,24 +200,6 @@ function initSidebar() {
     $('#pokemon-switch').prop('checked', localStorage.showPokemon === 'true');
     $('#pokestops-switch').prop('checked', localStorage.showPokestops === 'true');
     $('#scanned-switch').prop('checked', localStorage.showScanned === 'true');
-
-    var input = document.getElementById('next-location');
-    var searchBox = new google.maps.places.SearchBox(input);
-
-    searchBox.addListener('places_changed', function() {
-        var places = searchBox.getPlaces();
-
-        if (places.length == 0) {
-            return;
-        }
-
-        var loc = places[0].geometry.location;
-        $.post("/next_loc?lat=" + loc.lat() + "&lon=" + loc.lng(), {}).done(function (data) {
-            $("#next-location").val("");
-            map.setCenter(loc);
-            marker.setPosition(loc);
-        });
-    });
 }
 
 var pad = function (number) { return number <= 99 ? ("0" + number).slice(-2) : number; }
