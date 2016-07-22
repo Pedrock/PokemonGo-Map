@@ -160,14 +160,6 @@ initMap = function() {
 
     map.setMapTypeId(localStorage['map_style']);
 
-    marker = new google.maps.Marker({
-        position: {
-            lat: center_lat,
-            lng: center_lng
-        },
-        map: map,
-        animation: google.maps.Animation.DROP
-    });
     initSidebar();
     addMyLocationButton();
 };
@@ -372,7 +364,7 @@ function updateMap() {
     localStorage.showPokemon = localStorage.showPokemon || true;
     localStorage.showGyms = localStorage.showGyms || true;
     localStorage.showPokestops = localStorage.showPokestops || true;
-    localStorage.showScanned = localStorage.showScanned || true;
+    localStorage.showScanned = localStorage.showScanned || false;
 
     $.ajax({
         url: "raw_data",
@@ -437,15 +429,9 @@ function updateMap() {
             if (!localStorage.showScanned) {
                 return false;
             }
-
             if (item.scanned_id in map_scanned) {
                 // if team has changed, create new marker (new icon)
-                if (map_scanned[item.scanned_id].last_modified != item.last_modified) {
-                    map_scanned[item.scanned_id].marker.setMap(null);
-                    map_scanned[item.scanned_id].marker = setupScannedMarker(item);
-                }else{
-                    map_scanned[item.scanned_id].marker.setOptions({fillColor: getColorByDate(item.last_modified)});
-                }
+                map_scanned[item.scanned_id].marker.setOptions({fillColor: getColorByDate(item.last_modified)});
             }
             else { // add marker to map and item to dict
                 if (item.marker) item.marker.setMap(null);
