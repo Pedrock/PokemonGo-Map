@@ -17,6 +17,7 @@ log = logging.getLogger(__name__)
 
 TIMESTAMP = '\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000'
 REQ_SLEEP = 1
+failed_consecutive = 0
 api = PGoApi()
 
 
@@ -81,7 +82,7 @@ class ThreadScan(threading.Thread):
                     response_dict = False
                 if response_dict:
                     try:
-                        parse_map(response_dict)
+                        parse_map(response_dict, step_location)
                         break
                     except:
                         traceback.print_exc()
@@ -124,4 +125,6 @@ def search_loop(args):
         search(args,queue)
         queue.join()
         log.info("Scanning complete.")
-        time.sleep(20)
+        if args.scan_delay > 1:
+            log.info('Waiting {:d} seconds before beginning new scan.'.format(args.scan_delay))
+        time.sleep(args.scan_delay)
