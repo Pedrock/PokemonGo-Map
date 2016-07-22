@@ -124,4 +124,4 @@ def search_loop(args):
         search(args,queue)
         queue.join()
         log.info("Scanning complete.")
-        time.sleep(30)
+        time.sleep(20)
