@@ -31,7 +31,7 @@ def send_map_request(api, position):
                             cell_id=get_cellid(position[0], position[1]))
         return api.call()
     except Exception as e:
-        log.warn("Uncaught exception when downloading map "+ e)
+        log.warn("Uncaught exception when downloading map "+ str(e))
         return False
 
 
@@ -95,7 +95,7 @@ class ThreadScan(threading.Thread):
             i = task['i']
             num_steps = self.num_steps
             
-            log.info('Scanning step {:d} of {:d}.'.format(i, 3*num_steps**2-3*num_steps))
+            log.info('Scanning step {:d} of {:d}.'.format(i, 3*num_steps**2-3*num_steps+1))
             log.debug('Scan location is {:f}, {:f}'.format(step_location[0], step_location[1]))
 
             while True:
@@ -108,6 +108,8 @@ class ThreadScan(threading.Thread):
                     try:
                         parse_map(response_dict, step_location)
                         break
+                    except KeyError:
+                        log.error('Scan step failed ({:d}). Trying again.'.format(i))
                     except:
                         traceback.print_exc()
                         log.error('Scan step failed ({:d}). Trying again.'.format(i))
@@ -115,7 +117,7 @@ class ThreadScan(threading.Thread):
                     log.info('Map Download failed ({:d}). Trying again.'.format(i))
 
             #signals to queue job is done
-            log.info('Completed {:5.2f}% of scan.'.format(float(i) / (3*num_steps**2-3*num_steps)*100))
+            log.info('Completed {:5.2f}% of scan.'.format(float(i) / (3*num_steps**2-3*num_steps+1)*100))
             self.queue.task_done()
 
 

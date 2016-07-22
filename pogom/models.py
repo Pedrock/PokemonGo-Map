@@ -187,7 +187,7 @@ def parse_map(map_dict, step_location):
 def bulk_upsert(cls, data):
     num_rows = len(data.values())
     i = 0
-    step = 120
+    step = 1
 
     while i < num_rows:
         log.debug("Inserting items {} to {}".format(i, min(i+step, num_rows)))
@@ -201,5 +201,6 @@ def bulk_upsert(cls, data):
 
 def create_tables():
     db.connect()
+    db.set_autocommit(True)
     db.create_tables([Pokemon, Pokestop, Gym, ScannedLocation], safe=True)
     db.close()

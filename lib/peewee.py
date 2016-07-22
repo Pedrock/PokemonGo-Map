@@ -1891,15 +1891,19 @@ class QueryCompiler(object):
                     query.model_class))
 
         if query._upsert and type(meta.database) is PostgresqlDatabase:
-            clauses.append(SQL('ON CONFLICT (%s) DO UPDATE SET' % meta.primary_key.name))
             update = []
             for field in fields:
-                update.append(Expression(
-                    field.as_entity(with_table=False),
-                    OP.EQ,
-                    SQL('EXCLUDED.' + field.db_column),
-                    flat=True))  # No outer parens, no table alias.
-            clauses.append(CommaClause(*update))
+                if not field.primary_key:
+                    update.append(Expression(
+                        field.as_entity(with_table=False),
+                        OP.EQ,
+                        SQL('EXCLUDED.' + field.db_column),
+                        flat=True))  # No outer parens, no table alias.
+            if update:
+                clauses.append(SQL('ON CONFLICT (%s) DO UPDATE SET' % meta.primary_key.name))
+                clauses.append(CommaClause(*update))
+            else:
+                clauses.append(SQL('ON CONFLICT (%s) DO NOTHING' % meta.primary_key.name))
 
         if query.is_insert_returning:
             clauses.extend([
