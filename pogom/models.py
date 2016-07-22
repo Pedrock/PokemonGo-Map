@@ -138,30 +138,17 @@ def parse_map(map_dict, step_location):
                     'active_pokemon_id': active_pokemon_id
                 }
             else:  # Currently, there are only stops and gyms
-                if 'owned_by_team' in f:
-                    gyms[f['id']] = {
-                        'gym_id': f['id'],
-                        'team_id': f['owned_by_team'],
-                        'guard_pokemon_id': f['guard_pokemon_id'],
-                        'gym_points': f['gym_points'],
-                        'enabled': f['enabled'],
-                        'latitude': f['latitude'],
-                        'longitude': f['longitude'],
-                        'last_modified': datetime.utcfromtimestamp(
-                            f['last_modified_timestamp_ms'] / 1000.0),
-                    }
-                else:
-                    gyms[f['id']] = {
-                            'gym_id': f['id'],
-                            'team_id': 0,
-                            'guard_pokemon_id': 0,
-                            'gym_points': 0,
-                            'enabled': f['enabled'],
-                            'latitude': f['latitude'],
-                            'longitude': f['longitude'],
-                            'last_modified': datetime.utcfromtimestamp(
-                                f['last_modified_timestamp_ms'] / 1000.0),
-                        }
+                gyms[f['id']] = {
+                    'gym_id': f['id'],
+                    'team_id': f.get('owned_by_team', 0),
+                    'guard_pokemon_id': f.get('guard_pokemon_id', 0),
+                    'gym_points': f.get('gym_points', 0),
+                    'enabled': f['enabled'],
+                    'latitude': f['latitude'],
+                    'longitude': f['longitude'],
+                    'last_modified': datetime.utcfromtimestamp(
+                        f['last_modified_timestamp_ms'] / 1000.0),
+                }
 
     if pokemons:
         log.info("Upserting {} pokemon".format(len(pokemons)))
