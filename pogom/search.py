@@ -17,10 +17,7 @@ from .models import parse_map
 log = logging.getLogger(__name__)
 
 TIMESTAMP = '\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000'
-REQ_SLEEP = 1
-failed_consecutive = 0
 api = PGoApi()
-
 
 def send_map_request(api, position):
     try:
@@ -69,7 +66,6 @@ def generate_location_steps(il, num_steps):
         x+=1
         yield hex_transform(x,y,r,il)
 
-
 def login(args, position):
     log.info('Attempting login to Pokemon Go.')
 
@@ -77,7 +73,7 @@ def login(args, position):
 
     while not api.login(args.auth_service, args.username, args.password):
         log.info('Failed to login to Pokemon Go. Trying again.')
-        time.sleep(REQ_SLEEP)
+        time.sleep(config['REQ_SLEEP'])
 
     log.info('Login to Pokemon Go successful.')
 
@@ -134,7 +130,6 @@ def search(args,queue):
             login(args, position)
     else:
         login(args, position)
-
     i = 1
     for step_location in generate_location_steps(position, num_steps):
         task = {'i':i, 'step_location':step_location}
@@ -153,4 +148,5 @@ def search_loop(args):
         log.info("Scanning complete.")
         if args.scan_delay > 1:
             log.info('Waiting {:d} seconds before beginning new scan.'.format(args.scan_delay))
+        i += 1
         time.sleep(args.scan_delay)
