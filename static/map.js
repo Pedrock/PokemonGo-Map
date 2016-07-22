@@ -135,6 +135,8 @@ initMap = function() {
           mapTypeIds: [
               google.maps.MapTypeId.ROADMAP,
               google.maps.MapTypeId.SATELLITE,
+              google.maps.MapTypeId.HYBRID,
+              google.maps.MapTypeId.TERRAIN,
               'dark_style',
               'style_light2',
               'style_pgo']
