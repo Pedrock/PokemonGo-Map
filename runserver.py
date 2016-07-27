@@ -27,8 +27,7 @@ def start_locator_thread(args):
     search_thread.name = 'search_thread'
     search_thread.start()
 
-
-if __name__ == '__main__':
+def main():
     logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(module)11s] [%(levelname)7s] %(message)s')
 
     logging.getLogger("peewee").setLevel(logging.INFO)
@@ -91,4 +90,7 @@ if __name__ == '__main__':
             time.sleep(1)
         search_thread.join()
     else:
-        app.run(threaded=True, debug=args.debug, host=args.host, port=args.port)
+        app.run(threaded=True, debug=args.debug, host=os.environ.get('OPENSHIFT_PYTHON_IP',args.host), port=os.environ.get('OPENSHIFT_PYTHON_PORT',args.port))
+
+if __name__ == '__main__':
+	main()

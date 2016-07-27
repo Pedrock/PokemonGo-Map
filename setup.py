@@ -1,0 +1,27 @@
+from setuptools import setup
+
+setup(name='PokeMaps',
+      version='1.0',
+      description='OpenShift App',
+      author='Your Name',
+      author_email='example@example.com',
+      url='http://www.python.org/sigs/distutils-sig/',
+      install_requires=['Flask==0.11.1',
+		'Jinja2==2.8',
+		'MarkupSafe==0.23',
+		'Werkzeug==0.11.10',
+		'configargparse==0.10.0',
+		'click==6.6',
+		'itsdangerous==0.24',
+		'wsgiref==0.1.2',
+		'geopy==1.11.0',
+		'protobuf==2.6.1',
+		'requests==2.10.0',
+		's2sphere==0.2.4',
+		'gpsoauth==0.3.0',
+		'protobuf-to-dict==0.1.0',
+		'PyMySQL==0.7.5',
+		'psycopg2==2.6.2',
+		'flask-cors==2.1.2',
+		'flask-compress==1.3.0']
+     )

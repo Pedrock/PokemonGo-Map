@@ -32,7 +32,8 @@ def init_database():
             args.db_name,
             user=args.db_user,
             password=args.db_pass,
-            host=args.db_host)
+            host=os.environ.get('OPENSHIFT_MYSQL_DB_HOST',args.db_host),
+            port=int(os.environ.get('OPENSHIFT_MYSQL_DB_PORT',3306)))
         log.info('Connecting to MySQL database on {}.'.format(args.db_host))
     elif args.db_type == 'postgresql':
         db = PostgresqlDatabase(
