@@ -656,6 +656,7 @@ function loadRawData() {
       'neLng': neLng
     },
     dataType: "json",
+    cache: false,
     beforeSend: function beforeSend() {
       if (rawDataIsLoading) {
         return false;

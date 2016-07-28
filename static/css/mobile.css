@@ -23,8 +23,7 @@ li {
   height: 50px;
   image-rendering: pixelated;
   list-style: none;
-  cursor: pointer;
-  overflow: scroll; }
+  cursor: pointer; }
   li > div {
     margin: 15px 2px;
     float: left; }
