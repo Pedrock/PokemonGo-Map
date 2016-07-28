@@ -1,7 +1,5 @@
 #!/usr/bin/python
 import os
-import sys	
-from subprocess import Popen
 
 virtenv = os.path.join(os.environ.get('OPENSHIFT_PYTHON_DIR','.'), 'virtenv')
 virtualenv = os.path.join(virtenv, 'bin/activate_this.py')
@@ -15,7 +13,5 @@ except IOError:
 #
 
 if __name__ == '__main__':
-    a = Popen([sys.executable, 'runserver.py'])
-    b = Popen([sys.executable, 'runserver.py', '--no-server', '--location', 'LOCATION', '-u', 'USER', '-p', 'PASS'])
-    a.wait()
-    b.wait()
+    import runserver
+    runserver.main()
