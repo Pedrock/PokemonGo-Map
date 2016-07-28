@@ -222,7 +222,7 @@ function initMap() {
       lat: center_lat,
       lng: center_lng
     },
-    zoom: 16,
+    zoom: 14,
     fullscreenControl: true,
     streetViewControl: false,
     mapTypeControl: true,
