@@ -227,7 +227,7 @@ function initMap() {
     mapTypeControlOptions: {
       style: google.maps.MapTypeControlStyle.DROPDOWN_MENU,
       position: google.maps.ControlPosition.RIGHT_TOP,
-      mapTypeIds: [google.maps.MapTypeId.ROADMAP, google.maps.MapTypeId.SATELLITE, 'nolabels_style', 'dark_style', 'style_light2', 'style_pgo', 'dark_style_nl', 'style_light2_nl', 'style_pgo_nl']
+      mapTypeIds: [google.maps.MapTypeId.ROADMAP, google.maps.MapTypeId.SATELLITE, google.maps.MapTypeId.HYBRID, google.maps.MapTypeId.TERRAIN, 'nolabels_style', 'dark_style', 'style_light2', 'style_pgo', 'dark_style_nl', 'style_light2_nl', 'style_pgo_nl']
     }
   });
 
@@ -273,7 +273,7 @@ function initMap() {
   map.setMapTypeId(Store.get('map_style'));
   google.maps.event.addListener(map, 'idle', updateMap);
 
-  var marker = createSearchMarker();
+  if ($("#next-location:visible").length) var marker = createSearchMarker();
 
   addMyLocationButton();
   initSidebar();
