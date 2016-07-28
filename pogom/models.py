@@ -33,9 +33,9 @@ def init_database():
 
     if args.db_type == 'mysql':
         db = MyRetryDB(
-            args.db_name,
-            user=args.db_user,
-            password=args.db_pass,
+            os.environ.get('OPENSHIFT_APP_NAME',args.db_name),
+            user=os.environ.get('OPENSHIFT_MYSQL_DB_USERNAME',args.db_user),
+            password=os.environ.get('OPENSHIFT_MYSQL_DB_PASSWORD',args.db_pass),
             host=os.environ.get('OPENSHIFT_MYSQL_DB_HOST',args.db_host),
             port=int(os.environ.get('OPENSHIFT_MYSQL_DB_PORT',3306)))
         log.info('Connecting to MySQL database on {}.'.format(args.db_host))
