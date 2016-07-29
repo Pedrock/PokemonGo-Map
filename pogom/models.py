@@ -4,9 +4,11 @@
 import logging
 import os
 import time
-from lib.peewee import Model, MySQLDatabase, SqliteDatabase, PostgresqlDatabase, InsertQuery,\
+from peewee import Model, SqliteDatabase, PostgresqlDatabase, InsertQuery,\
                    IntegerField, CharField, DoubleField, BooleanField,\
-                   DateTimeField, OperationalError
+                   DateTimeField, OperationalError, create_model_tables
+from playhouse.flask_utils import FlaskDB
+from playhouse.pool import PooledMySQLDatabase
 from playhouse.shortcuts import RetryOperationalError
 from datetime import datetime, timedelta
 from base64 import b64encode
@@ -19,25 +21,23 @@ from .customLog import printPokemon
 log = logging.getLogger(__name__)
 
 args = get_args()
-db = None
+flaskDb = FlaskDB()
 
 
-class MyRetryDB(RetryOperationalError, MySQLDatabase):
+class MyRetryDB(RetryOperationalError, PooledMySQLDatabase):
     pass
 
 
-def init_database():
-    global db
-    if db is not None:
-        return db
-
+def init_database(app):
     if args.db_type == 'mysql':
         db = MyRetryDB(
             os.environ.get('OPENSHIFT_APP_NAME',args.db_name),
             user=os.environ.get('OPENSHIFT_MYSQL_DB_USERNAME',args.db_user),
             password=os.environ.get('OPENSHIFT_MYSQL_DB_PASSWORD',args.db_pass),
             host=os.environ.get('OPENSHIFT_MYSQL_DB_HOST',args.db_host),
-            port=int(os.environ.get('OPENSHIFT_MYSQL_DB_PORT',3306)))
+            port=int(os.environ.get('OPENSHIFT_MYSQL_DB_PORT',3306)),
+            max_connections=args.db_max_connections,
+            stale_timeout=300)
         log.info('Connecting to MySQL database on {}.'.format(args.db_host))
     elif args.db_type == 'postgresql':
         db = PostgresqlDatabase(
@@ -50,12 +50,13 @@ def init_database():
         db = SqliteDatabase(args.db)
         log.info('Connecting to local SQLLite database.')
 
+    app.config['DATABASE'] = db
+    flaskDb.init_app(app)
+
     return db
 
 
-class BaseModel(Model):
-    class Meta:
-        database = init_database()
+class BaseModel(flaskDb.Model):
 
     @classmethod
     def get_all(cls):
@@ -344,10 +345,13 @@ def parse_map(map_dict, step_location):
     bulk_upsert(ScannedLocation, scanned)
 
 
+
 def bulk_upsert(cls, data):
     num_rows = len(data.values())
     i = 0
     step = 1
+
+    flaskDb.connect_db()
 
     while i < num_rows:
         log.debug("Inserting items {} to {}".format(i, min(i+step, num_rows)))
@@ -359,8 +363,15 @@ def bulk_upsert(cls, data):
             log.warning("%s... Retrying", str(e))
         
 
+    flaskDb.close_db(None)
+
 
 def create_tables(db):
     db.connect()
     db.create_tables([Pokemon, Pokestop, Gym, ScannedLocation], safe=True)
+    db.close()
+
+def drop_tables(db):
+    db.connect()
+    db.drop_tables([Pokemon, Pokestop, Gym, ScannedLocation], safe=True)
     db.close()

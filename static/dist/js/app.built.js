@@ -134,8 +134,10 @@
 
 	// Event: Hide on ESC.
 	window.addEventListener('keydown', function (event) {
-		if (event.keyCode == 27) $nav.classList.remove('visible');
-		$stats.classList.remove('visible');
+		if (event.keyCode == 27) {
+			$nav.classList.remove('visible');
+			$stats.classList.remove('visible');
+		}
 	});
 
 	// Event: Hide nav on click.
@@ -152,4 +154,4 @@
 		$stats.classList.remove('visible');
 	});
 })();
-//# sourceMappingURL=app.js.map
+//# sourceMappingURL=app.built.js.map
