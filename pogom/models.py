@@ -4,7 +4,7 @@
 import logging
 import os
 import time
-from peewee import Model, SqliteDatabase, PostgresqlDatabase, InsertQuery,\
+from peewee import Model, SqliteDatabase, InsertQuery,\
                    IntegerField, CharField, DoubleField, BooleanField,\
                    DateTimeField, OperationalError, create_model_tables
 from playhouse.flask_utils import FlaskDB
@@ -39,13 +39,6 @@ def init_database(app):
             max_connections=args.db_max_connections,
             stale_timeout=300)
         log.info('Connecting to MySQL database on {}.'.format(args.db_host))
-    elif args.db_type == 'postgresql':
-        db = PostgresqlDatabase(
-            args.db_name, 
-            user=args.db_user, 
-            password=args.db_pass, 
-            host=args.db_host)
-        log.info('Connecting to PostgreSQL database on {}.'.format(args.db_host))
     else:
         db = SqliteDatabase(args.db)
         log.info('Connecting to local SQLLite database.')
