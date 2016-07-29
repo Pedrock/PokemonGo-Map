@@ -8,7 +8,7 @@ Search Architecture:
  - Create N search threads
    - Each search thread will be responsible for hitting the API for a given scan location
  - Create a "overseer" loop
-   - Creates/updates the search grid, populates the Queue, and waits for the current search itteration to complete
+   - Creates/updates the search grid, populates the Queue, and waits for the current search iteration to complete
    -
 '''
 
@@ -16,6 +16,7 @@ import logging
 import time
 import math
 import threading
+from itertools import cycle
 
 from threading import Thread, Lock
 from queue import Queue
@@ -29,9 +30,10 @@ from .models import parse_map
 log = logging.getLogger(__name__)
 
 TIMESTAMP = '\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000'
-api = PGoApi()
 
 search_queue = Queue()
+accounts = None
+accounts_iter = None
 
 
 def calculate_lng_degrees(lat):
@@ -110,14 +112,13 @@ def generate_location_steps(initial_loc, step_count):
         ring += 1
 
 
-def login(args, position):
+def login(account, login_delay, position):
     log.info('Attempting login to Pokemon Go.')
-
+    api = account['api']
     api.set_position(*position)
-
-    while not api.login(args.auth_service, args.username, args.password):
-        log.info('Failed to login to Pokemon Go. Trying again in {:g} seconds.'.format(args.login_delay))
-        time.sleep(args.login_delay)
+    while not api.login(account['auth_service'], account['username'], account['password']):
+        log.error('Failed to login to Pokemon Go with {:s}. Trying again in {:g} seconds.'.format(account['username'], login_delay))
+        time.sleep(login_delay)
 
     log.info('Login to Pokemon Go successful.')
 
@@ -140,7 +141,9 @@ def search_thread(q):
     while True:
 
         # Get the next item off the queue (this blocks till there is something)
-        i, step_location, step, lock = q.get()
+        i, step_location, step, lock, login_delay = q.get()
+        account = next(accounts_iter)
+        api = account['api']
 
         # If a new location has been set, just mark done and continue
         if 'NEXT_LOCATION' in config:
@@ -148,31 +151,35 @@ def search_thread(q):
             q.task_done()
             continue
 
-        log.debug("{}: processing itteration {} step {}".format(threadname, i, step))
+        log.debug("{}: processing iteration {} step {}".format(threadname, i, step))
         response_dict = {}
         failed_consecutive = 0
         while not response_dict:
             response_dict = send_map_request(api, step_location)
             if response_dict:
-                with lock:
-                    try:
+                try:
+                    if lock is None:
                         parse_map(response_dict, step_location)
-                        log.debug("{}: itteration {} step {} complete".format(threadname, i, step))
-                    except KeyError:
-                        log.error('Search thread failed. Response dictionary key error')
-                        log.debug('{}: itteration {} step {} failed. Response dictionary\
-                            key error.'.format(threadname, i, step))
-                        failed_consecutive += 1
-                        if(failed_consecutive >= config['REQ_MAX_FAILED']):
-                            log.error('Niantic servers under heavy load. Waiting before trying again')
-                            time.sleep(config['REQ_HEAVY_SLEEP'])
-                            failed_consecutive = 0
-                        response_dict = {}
+                    else:
+                        with lock:
+                            parse_map(response_dict, step_location)
+                    log.debug("{}: iteration {} step {} complete".format(threadname, i, step))
+                except KeyError:
+                    log.error('Search thread failed. Response dictionary key error')
+                    log.debug('{}: iteration {} step {} failed. Response dictionary\
+                        key error.'.format(threadname, i, step))
+                    failed_consecutive += 1
+                    if(failed_consecutive >= config['REQ_MAX_FAILED']):
+                        log.error('Niantic servers under heavy load. Waiting before trying again')
+                        time.sleep(config['REQ_HEAVY_SLEEP'])
+                        failed_consecutive = 0
+                    response_dict = {}
             else:
                 log.info('Map download failed, waiting and retrying')
-                log.debug('{}: itteration {} step {} failed'.format(threadname, i, step))
+                log.debug('{}: iteration {} step {} failed'.format(threadname, i, step))
                 time.sleep(config['REQ_SLEEP'])
-                
+        
+        time.sleep(config['REQ_SLEEP'])
         q.task_done()
 
 
@@ -181,6 +188,19 @@ def search_thread(q):
 #
 def search_loop(args):
     i = 0
+    global accounts
+    global accounts_iter
+    accounts = []
+
+    if args.accounts:
+        for account in args.accounts:
+            account['api'] = PGoApi()
+            accounts.append(account)
+    else:
+        accounts.append({'auth_service':args.auth_service, 'username':args.username, 'password':args.password, 'api':PGoApi()})
+
+    accounts_iter = cycle(accounts)
+
     while True:
         log.info("Search loop {} starting".format(i))
         try:
@@ -210,25 +230,24 @@ def search(args, i):
 
     position = (config['ORIGINAL_LATITUDE'], config['ORIGINAL_LONGITUDE'], 0)
 
-    if api._auth_provider and api._auth_provider._ticket_expire:
-        remaining_time = api._auth_provider._ticket_expire/1000 - time.time()
+    for account in accounts:
+        api = account['api']
+        if api._auth_provider and api._auth_provider._ticket_expire:
+            remaining_time = api._auth_provider._ticket_expire/1000 - time.time()
 
-        if remaining_time > 60:
-            log.info("Skipping Pokemon Go login process since already logged in \
-                for another {:.2f} seconds".format(remaining_time))
+            if remaining_time <= 120:
+                login(account, args.login_delay, position)
         else:
-            login(args, position)
-    else:
-        login(args, position)
+            login(account, args.login_delay, position)
 
-    lock = Lock()
+    lock = Lock() if (args.db_type == 'sqlite') else None
 
     for step, step_location in enumerate(generate_location_steps(position, num_steps), 1):
-        log.debug("Queue search itteration {}, step {}".format(i, step))
-        search_args = (i, step_location, step, lock)
+        log.debug("Queue search iteration {}, step {}".format(i, step))
+        search_args = (i, step_location, step, lock, args.login_delay)
         search_queue.put(search_args)
 
-    # Wait until this scan itteration queue is empty (not nessearily done)
+    # Wait until this scan iteration queue is empty (not nessearily done)
     while not search_queue.empty():
         log.debug("Waiting for current search queue to complete (remaining: {})".format(search_queue.qsize()))
         time.sleep(1)

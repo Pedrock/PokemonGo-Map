@@ -1,0 +1,7 @@
+- auth_service: google
+  username: USERNAME1
+  password: PASSWORD1
+
+- auth_service: google
+  username: USER2
+  password: PASS2

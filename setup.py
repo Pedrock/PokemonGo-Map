@@ -24,5 +24,6 @@ setup(name='PokeMaps',
 		'PyMySQL==0.7.5',
 		'psycopg2==2.6.2',
 		'flask-cors==2.1.2',
-		'flask-compress==1.3.0']
+		'flask-compress==1.3.0',
+		'pyyaml=3.11']
      )

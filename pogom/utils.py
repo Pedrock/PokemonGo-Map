@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 import logging
 import shutil
 import requests
+import yaml
 
 from . import config
 
@@ -28,6 +29,13 @@ def verify_config_file_exists(filename):
         log.info("Could not find " + filename + ", copying default")
         shutil.copy2(fullpath + '.example', fullpath)
 
+def get_accounts(filename):
+    fullpath = os.path.join(os.path.dirname(__file__), '../config/', filename)
+    if not os.path.exists(fullpath):
+        log.error("Could not find " + filename)
+        sys.exit(1)
+    with open(fullpath, 'r') as stream:
+        return yaml.load(stream)
 
 def get_args():
     # fuck PEP8
@@ -102,6 +110,7 @@ def get_args():
     parser.add_argument('--db-host', help='IP or hostname for the database')
     parser.add_argument('-wh', '--webhook', help='Define URL(s) to POST webhook information to',
                         nargs='*', default=False, dest='webhooks')
+    parser.add_argument('-ac', '--accounts', help='Accounts YAML file')
     parser.set_defaults(DEBUG=False)
 
     args = parser.parse_args()
@@ -112,16 +121,18 @@ def get_args():
             print sys.argv[0] + ': error: arguments -l/--location is required'
             sys.exit(1)
     else:
-        if (args.username is None or args.location is None or args.step_limit is None):
-            parser.print_usage()
-            print sys.argv[0] + ': error: arguments -u/--username, -l/--location, -st/--step-limit are required'
-            sys.exit(1)
+        if args.accounts is None:
+            if (args.username is None or args.location is None or args.step_limit is None):
+                parser.print_usage()
+                print sys.argv[0] + ': error: arguments -u/--username, -l/--location, -st/--step-limit are required'
+                sys.exit(1)
 
-        if config["PASSWORD"] is None and args.password is None:
-            config["PASSWORD"] = args.password = getpass.getpass()
-        elif args.password is None:
-            args.password = config["PASSWORD"]
-
+            if config["PASSWORD"] is None and args.password is None:
+                config["PASSWORD"] = args.password = getpass.getpass()
+            elif args.password is None:
+                args.password = config["PASSWORD"]
+        else:
+            args.accounts = get_accounts(args.accounts)
     return args
 
 

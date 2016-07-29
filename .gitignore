@@ -5,6 +5,7 @@
 *.sass-cache
 *.orig
 config/config.ini
+config/accounts.yml
 node_modules/
 venv/
 core
