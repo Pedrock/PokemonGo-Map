@@ -164,16 +164,14 @@ def search_thread(q):
                         with lock:
                             parse_map(response_dict, step_location)
                     log.debug("{}: iteration {} step {} complete".format(threadname, i, step))
-                except KeyError:
-                    log.error('Search thread failed. Response dictionary key error')
-                    log.debug('{}: iteration {} step {} failed. Response dictionary\
-                        key error.'.format(threadname, i, step))
+                except Exception as e:
+                    log.error('Search thread failed. {0.__class__.__name__}: {0}'.format(e))
                     failed_consecutive += 1
                     if(failed_consecutive >= config['REQ_MAX_FAILED']):
                         log.error('Niantic servers under heavy load. Waiting before trying again')
                         time.sleep(config['REQ_HEAVY_SLEEP'])
                         failed_consecutive = 0
-                    response_dict = {}
+                    response_dict = None
             else:
                 log.info('Map download failed, waiting and retrying')
                 log.debug('{}: iteration {} step {} failed'.format(threadname, i, step))
